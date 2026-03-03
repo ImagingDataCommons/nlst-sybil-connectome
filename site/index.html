@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLST Sybil Connectome</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root { 
+            --bg: #0f172a; 
+            --card: #1e293b; 
+            --accent: #38bdf8; 
+            --match: #818cf8;
+        }
+        body { 
+            background: var(--bg); 
+            color: #f1f5f9; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            font-family: 'Inter', system-ui, sans-serif; 
+        }
+        #chart-container { flex: 1; position: relative; width: 100%; height: 100%; }
+        .loader { 
+            border: 4px solid #334155; 
+            border-top: 4px solid var(--accent); 
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='C19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<header class="p-4 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center z-50 backdrop-blur-md">
+    <div>
+        <h1 class="text-xl font-bold tracking-tight text-white">
+            NLST <span class="text-sky-400">Sybil</span> Connectome
+        </h1>
+        <p class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">Foundation Model Similarity</p>
+    </div>
+    <div class="flex gap-4">
+        <div class="flex flex-col">
+            <label class="text-[10px] text-slate-500 font-bold ml-1 mb-1">MODEL</label>
+            <select id="modelSelect" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-sky-500 min-w-[140px] transition-all">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div class="flex flex-col">
+            <label class="text-[10px] text-slate-500 font-bold ml-1 mb-1">QUERY PATIENT</label>
+            <select id="patientSelect" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-sky-500 min-w-[200px] transition-all">
+                <option value="">Select a model</option>
+            </select>
+        </div>
+    </div>
+</header>
+
+<div id="chart-container">
+    <div id="main-chart" style="width: 100%; height: 100%;"></div>
+    
+    <!-- Legend/Stats Overlay -->
+    <div id="stats-panel" class="absolute bottom-6 left-6 p-4 bg-slate-900/80 border border-slate-700 rounded-xl backdrop-blur-md hidden pointer-events-none">
+        <div class="text-[10px] text-slate-500 font-bold uppercase mb-2">Comparison Stats</div>
+        <div id="stats-content" class="space-y-1"></div>
+    </div>
+
+    <div id="overlay" class="absolute inset-0 flex items-center justify-center bg-slate-900/60 z-40 transition-opacity duration-500">
+        <div class="flex flex-col items-center">
+            <div class="loader mb-4"></div>
+            <p id="loader-text" class="text-sky-400 text-sm font-bold tracking-widest uppercase">Initializing Canvas</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let rawData = [];
+    let myChart = null;
+    const chartDom = document.getElementById('main-chart');
+    const overlay = document.getElementById('overlay');
+    const loaderText = document.getElementById('loader-text');
+    const statsPanel = document.getElementById('stats-panel');
+
+    const CSV_URL = 'https://storage.googleapis.com/nlst_cbir_connectome/connectome_data.csv';
+
+    function initChart() {
+        if (myChart) myChart.dispose();
+        myChart = echarts.init(chartDom);
+        
+        window.addEventListener('resize', () => myChart && myChart.resize());
+        
+        myChart.on('click', (params) => {
+            if (params.data && params.data.url) {
+                window.open(params.data.url, '_blank');
+            }
+        });
+
+        myChart.setOption({
+            title: { 
+                text: 'Select a model and patient to explore connectivity', 
+                left: 'center', 
+                top: 'center', 
+                textStyle: { color: '#475569', fontSize: 14, fontWeight: 'normal' } 
+            }
+        });
+    }
+
+    async function loadData() {
+        Papa.parse(CSV_URL, {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                rawData = results.data.filter(row => row.model_name && row.q_PatientID).map(row => ({
+                    ...row,
+                    q_PatientID: String(row.q_PatientID),
+                    m_PatientID: String(row.m_PatientID)
+                }));
+                populateModelDropdown();
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 500);
+            },
+            error: (err) => {
+                loaderText.innerText = "Connection Failed";
+                loaderText.classList.replace('text-sky-400', 'text-red-500');
+            }
+        });
+    }
+
+    function populateModelDropdown() {
+        const models = [...new Set(rawData.map(r => r.model_name))].sort();
+        const select = document.getElementById('modelSelect');
+        select.innerHTML = '<option value="">Select Model</option>';
+        models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = opt.textContent = m;
+            select.appendChild(opt);
+        });
+    }
+
+    function updatePatientDropdown(model) {
+        const select = document.getElementById('patientSelect');
+        select.innerHTML = '<option value="">Select Patient ID</option>';
+        if (!model) return;
+
+        const patients = [...new Set(rawData.filter(r => r.model_name === model).map(r => r.q_PatientID))].sort();
+        patients.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = opt.textContent = p;
+            select.appendChild(opt);
+        });
+    }
+
+    function renderConnectome(model, patientId) {
+        const matches = rawData
+            .filter(r => r.model_name === model && r.q_PatientID === patientId)
+            .sort((a, b) => b.similarity_pct - a.similarity_pct)
+            .slice(0, 5);
+
+        if (matches.length === 0) return;
+
+        const queryInfo = matches[0];
+        const nodes = [];
+        const links = [];
+
+        // 1. Central Query Node (Enhanced Visuals)
+        nodes.push({
+            name: queryInfo.q_PatientID,
+            url: queryInfo.q_viewer_url_series,
+            symbolSize: 110,
+            x: 500, y: 500, // Fixed Center
+            fixed: true,
+            value: `QUERY PATIENT\nType: ${queryInfo.q_type || 'N/A'}\nStage: ${queryInfo.q_stage || 'N/A'}\n\n[Click to View CT + Sybil]`,
+            itemStyle: { 
+                color: '#0f172a',
+                borderColor: '#38bdf8', 
+                borderWidth: 4, 
+                shadowBlur: 40, 
+                shadowColor: 'rgba(56, 189, 248, 0.8)' 
+            },
+            label: { 
+                show: true, 
+                position: 'inside', 
+                color: '#38bdf8', 
+                fontWeight: '900', 
+                fontSize: 12, 
+                formatter: '{b}' // Displaying PatientID in the box
+            }
+        });
+
+        // 2. Peripheral Nodes (Circular Layout from original style)
+        const radius = 260;
+        matches.forEach((m, i) => {
+            const angle = (i / matches.length) * Math.PI * 2;
+            const x = 500 + radius * Math.cos(angle);
+            const y = 500 + radius * Math.sin(angle);
+
+            nodes.push({
+                name: m.m_PatientID,
+                url: m.m_viewer_url_series,
+                symbolSize: 75,
+                x: x, y: y,
+                value: `MATCHED CASE\nScore: ${m.similarity_pct.toFixed(2)}%\nType: ${m.m_type || 'N/A'}\nStage: ${m.m_stage || 'N/A'}\n\n[Click to View CT + Sybil]`,
+                itemStyle: { 
+                    color: '#1e293b', 
+                    borderColor: '#818cf8', 
+                    borderWidth: 2,
+                    shadowBlur: 15,
+                    shadowColor: 'rgba(129, 140, 248, 0.3)'
+                },
+                label: { 
+                    show: true, 
+                    position: 'bottom', 
+                    color: '#94a3b8', 
+                    fontSize: 11, 
+                    distance: 10,
+                    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                    padding: [2, 4],
+                    borderRadius: 4
+                }
+            });
+
+            links.push({
+                source: queryInfo.q_PatientID,
+                target: m.m_PatientID,
+                lineStyle: { 
+                    width: Math.max(1, (m.similarity_pct / 12)), 
+                    curveness: 0.1, 
+                    color: 'rgba(148, 163, 184, 0.2)',
+                },
+                emphasis: { lineStyle: { color: '#38bdf8', opacity: 0.8, width: 4 } }
+            });
+        });
+
+        // Update Stats Panel
+        statsPanel.classList.remove('hidden');
+        document.getElementById('stats-content').innerHTML = `
+            <div class="text-xs"><span class="text-slate-500">Avg Similarity:</span> <span class="text-sky-400 font-bold">${(matches.reduce((a,b)=>a+b.similarity_pct,0)/matches.length).toFixed(1)}%</span></div>
+            <div class="text-xs"><span class="text-slate-500">Max Score:</span> <span class="text-indigo-400 font-bold">${matches[0].similarity_pct.toFixed(1)}%</span></div>
+        `;
+
+        const option = {
+            backgroundColor: 'transparent',
+            tooltip: { 
+                trigger: 'item', 
+                padding: 12,
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                borderColor: '#334155',
+                borderWidth: 1,
+                borderRadius: 8,
+                textStyle: { color: '#f1f5f9', fontSize: 12, lineHeight: 18 },
+                formatter: params => params.data.value ? params.data.value.replace(/\n/g, '<br/>') : params.name 
+            },
+            series: [{
+                type: 'graph',
+                layout: 'none',
+                data: nodes,
+                links: links,
+                roam: true,
+                scaleLimit: { min: 0.5, max: 3 },
+                emphasis: { focus: 'adjacency' },
+                lineStyle: { color: 'source', curveness: 0.1 }
+            }]
+        };
+
+        myChart.setOption(option, true);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        loadData();
+
+        document.getElementById('modelSelect').addEventListener('change', (e) => {
+            updatePatientDropdown(e.target.value);
+            myChart.clear();
+            statsPanel.classList.add('hidden');
+        });
+
+        document.getElementById('patientSelect').addEventListener('change', (e) => {
+            const model = document.getElementById('modelSelect').value;
+            if (model && e.target.value) renderConnectome(model, e.target.value);
+        });
+    });
+</script>
+</body>
+</html>
