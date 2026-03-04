@@ -8,6 +8,8 @@ The NLST-Sybil collection contains tumor annotations for a larger set of patient
 
 All imaging data, lesion annotations and clinical data are sourced from [NCI Imaging Data Commons (IDC)](https://imaging.datacommons.cancer.gov/).
 
+This project originated at [NA-MIC Project Week 44](https://projectweek.na-mic.org/PW44_2026_GranCanaria/Projects/ExplorationOfFoundationModelsAndTheirEmbeddingsForOtherTasksUsingTheCloud/) (Gran Canaria, 2026).
+
 ## 🚀 Overview
 
 The visualization shows **all 289 patients simultaneously** as a force-directed graph. Each node is a patient; edges connect each patient to its 5 most similar (or most dissimilar) matches based on cosine distance between tumor region embeddings. Nodes cluster spatially by embedding similarity — patients whose tumors have similar feature representations appear closer together.
