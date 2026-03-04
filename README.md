@@ -71,7 +71,7 @@ Simply open `site/index.html` in a modern web browser. The only external depende
 
 ## 🔗 Links
 
-* **Live Demo**: [NLST Sybil Tumor Connectome](https://storage.googleapis.com/nlst_cbir_connectome/site/index.html)
+* **Live Demo**: [NLST Sybil Tumor Connectome](https://imagingdatacommons.github.io/nlst-sybil-connectome/)
 * **IDC Portal**: [Imaging Data Commons](https://imaging.datacommons.cancer.gov/)
 * **NLST on IDC**: [NLST Collection](https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id=nlst)
 
