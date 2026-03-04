@@ -847,12 +847,17 @@
                   ${clinParts.join('\n                  ')}
                 </div>`;
               }
+              const cached = imageCache.get(id);
+              const thumbHtml = cached
+                ? `<img src="${cached}" style="width:100%;border-radius:4px;margin:6px 0 2px;display:block;" />`
+                : '';
               return `<div class="custom-tooltip">
                 <div class="tooltip-header">
                   <span class="title">Patient ${id}</span>
                   <span class="type">${type}</span>
                 </div>
                 <div class="tooltip-degree">Connections: ${deg}</div>
+                ${thumbHtml}
                 ${clinHtml}
               </div>`;
             }
