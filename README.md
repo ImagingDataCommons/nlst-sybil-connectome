@@ -5,14 +5,17 @@ based on embedding distances and provides direct integration with the IDC (Imagi
 
 ## 🚀 Overview
 
-This repository contains the code for a Content-Based Image Retrieval (CBIR) "Connectome." By selecting a Foundation Model and a Query Patient, users can visualize the top 5 most similar patients (neighbors) in the latent space.
+This repository contains the code for a Content-Based Image Retrieval (CBIR) "Connectome." The network visualization shows **all 289 patients simultaneously** as a force-directed graph, with edges connecting each patient to its 5 most similar (or most dissimilar) matches in the embedding space of 9 foundation models.
 
 ### Key Features
 
-* **Multi-Model Support**: Compare results across different foundation models (e.g., CT-Clip, ViT, etc.).
-* **Sybil Integration**: Automatically maps single-lesion patients to their corresponding Sybil Structured Reports.
-* **Dual-Series Viewing**: Dynamic URL generation that opens the IDC Viewer with both the original CT series and the Sybil overlay pre-loaded.
-* **Interactive Connectome**: A high-performance SVG/Canvas graph built with Apache ECharts for exploring patient relationships.
+* **Full Network Visualization**: All patients rendered simultaneously in a force-directed layout with ECharts — nodes sized by connectivity, edges weighted by cosine distance.
+* **Multi-Model Support**: Compare results across 9 foundation models (CTClipVit, CTFM, FMCIB, Merlin, ModelsGen, PASTA, SUPREME, VISTA3D, Voco).
+* **Most Similar / Least Similar Toggle**: Switch between viewing the 5 closest and 5 farthest matches per patient to explore both similarity clusters and outlier relationships.
+* **Clinical Coloring**: Color nodes by 6 clinical facets — Sex, Age, Race, Smoking Status, Cancer Type, and Stage.
+* **Sybil Integration**: IDC Viewer links open both the original CT series and the Sybil Structured Report with tumor bounding boxes.
+* **Self-Contained**: All data embedded directly in the HTML — no runtime network requests or CSV parsing needed.
+* **Interactive Detail Panel**: Click any node to see clinical data, IDC viewer links, and outgoing/incoming match lists.
 
 ## 🛠️ Data Pipeline (Colab / BigQuery)
 
@@ -22,23 +25,13 @@ The backend logic is designed to run in a Google Colab environment using BigQuer
 2. **Distance Calculation**: Joins embedding distances with patient metadata.
 3. **URL Generation**: Constructs interactive links for the IDC Viewer
 
-## 📊 Dashboard Setup
+## 📊 Dashboard
 
-The dashboard is a single-file web application (`index.html`) that consumes a hosted CSV file.
-
-### Prerequisites
-
-* A hosted CSV file (e.g., on Google Cloud Storage) containing:
-  * `model_name`, `q_PatientID`, `similarity_pct`, `q_viewer_url_series`, `m_viewer_url_series`, etc.
-* **CORS Configuration**: Ensure your storage bucket allows GET requests from the domain where the dashboard is hosted.
+The dashboard is a fully self-contained single-file web application (`site/index.html`) with all data embedded as JavaScript constants (~700 KB total). No server, no CSV fetching, no CORS configuration needed.
 
 ### Local Development
 
-Simply open `index.html` in a modern web browser. The dashboard uses:
-
-* **Tailwind CSS**: For a modern, dark-mode UI.
-* **Apache ECharts**: For the force-directed/circular graph visualization.
-* **PapaParse**: For efficient client-side CSV parsing.
+Simply open `site/index.html` in a modern web browser. The only external dependency is **Apache ECharts** (loaded from CDN).
 
 ## 📁 Repository Structure
 
@@ -53,11 +46,15 @@ Simply open `index.html` in a modern web browser. The dashboard uses:
 * **Live Demo**: [NLST Sybil Connectome](https://storage.googleapis.com/nlst_cbir_connectome/site/index.html)
 * **Data Source**: [Imaging Data Commons (IDC)](https://imaging.datacommons.cancer.gov/)
 
+## 🤖 Development Tools
+
+The network visualization and data integration were developed with the assistance of [Claude Code](https://claude.ai/claude-code) using the [IDC Claude skill](https://github.com/ImagingDataCommons/idc-claude-skill) for querying clinical metadata via [idc-index](https://github.com/ImagingDataCommons/idc-index).
+
 ---
 *Developed for research and visualization of lung cancer foundation models.*
 
 Deepa Krishnaswamy and Andrey Fedorov
 
-Brigham and Women's Hospital 
+Brigham and Women's Hospital
 
-March 2026 
+March 2026
