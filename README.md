@@ -56,20 +56,25 @@ The data pipeline runs in Google Colab using BigQuery:
 4. **SR Mapping**: BigQuery queries link patients to their NLST-Sybil tumor annotation Structured Reports by navigating the DICOM `ReferencedSeriesSequence` hierarchy.
 5. **URL Generation**: Constructs IDC OHIF Viewer URLs that open both the CT series and the NLST-Sybil SR.
 
-## 📊 Dashboard
-
-The dashboard is a fully self-contained single-file web application (`site/index.html`) with all data embedded as JavaScript constants. No server, no CSV fetching, no CORS configuration needed.
-
-### Local Development
-
-Simply open `docs/index.html` in a modern web browser. The only external dependency is [Apache ECharts](https://echarts.apache.org/) (loaded from CDN).
-
 ## 📁 Repository Structure
 
-* `site/index.html`: The interactive network visualization dashboard.
-* `features/`: Embedding pickle files from each of the 9 foundation models.
-* `create_connectome_data_table.ipynb`: Colab notebook with BigQuery logic to compute pairwise distances and create `connectome_data.csv`.
-* `create_cbir_demo.ipynb`: Colab notebook that deploys the site and data to a public GCS bucket.
+```
+├── LICENSE                 Apache 2.0
+├── README.md
+├── docs/
+│   └── index.html          Dashboard (self-contained, ~790 KB)
+├── embeddings/
+│   └── *_features.pkl      Embedding pickle files (9 foundation models)
+└── notebooks/
+    ├── create_connectome_data_table.ipynb   BigQuery pipeline
+    └── create_cbir_demo.ipynb              GCS deployment
+```
+
+## 📊 Dashboard
+
+The dashboard is a fully self-contained single-file web application (`docs/index.html`) with all data embedded as JavaScript constants. No server, no CSV fetching, no CORS configuration needed.
+
+Simply open `docs/index.html` in a modern web browser. The only external dependency is [Apache ECharts](https://echarts.apache.org/) (loaded from CDN). CT slice thumbnails are loaded on demand from the [IDC DICOMweb proxy](https://learn.canceridc.dev/data/downloading-data/dicomweb-access).
 
 ## 🔗 Links
 
@@ -77,9 +82,9 @@ Simply open `docs/index.html` in a modern web browser. The only external depende
 * **IDC Portal**: [Imaging Data Commons](https://imaging.datacommons.cancer.gov/)
 * **NLST on IDC**: [NLST Collection](https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id=nlst)
 
-## 🤖 Development Tools
+## 🛠️ Developer Guide
 
-The network visualization and data integration were developed with the assistance of [Claude Code](https://claude.ai/claude-code) using the [IDC Claude skill](https://github.com/ImagingDataCommons/idc-claude-skill) for querying clinical metadata via [idc-index](https://github.com/ImagingDataCommons/idc-index).
+See [DEVELOPER.md](DEVELOPER.md) for prerequisites, data pipeline details, and instructions for rebuilding the dashboard.
 
 ## Acknowledgments
 
