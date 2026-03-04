@@ -1,4 +1,4 @@
-# NLST Sybil Connectome
+# NLST Sybil Tumor Connectome
 
 A content-based image retrieval (CBIR) connectome that visualizes **tumor-level similarity** between 289 lung cancer patients from the [National Lung Screening Trial (NLST)](https://www.cancer.gov/types/lung/research/nlst). For each patient, the tumor region is defined by bounding boxes from the [NLST-Sybil](https://doi.org/10.5281/zenodo.15643334) analysis results collection, and feature embeddings are extracted from these regions using 9 foundation models. The connectome shows which tumors look most (and least) alike according to each model.
 
@@ -71,7 +71,7 @@ Simply open `site/index.html` in a modern web browser. The only external depende
 
 ## 🔗 Links
 
-* **Live Demo**: [NLST Sybil Connectome](https://storage.googleapis.com/nlst_cbir_connectome/site/index.html)
+* **Live Demo**: [NLST Sybil Tumor Connectome](https://storage.googleapis.com/nlst_cbir_connectome/site/index.html)
 * **IDC Portal**: [Imaging Data Commons](https://imaging.datacommons.cancer.gov/)
 * **NLST on IDC**: [NLST Collection](https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id=nlst)
 
