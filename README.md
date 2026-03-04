@@ -60,7 +60,7 @@ The dashboard is a fully self-contained single-file web application (`site/index
 
 ### Local Development
 
-Simply open `site/index.html` in a modern web browser. The only external dependency is [Apache ECharts](https://echarts.apache.org/) (loaded from CDN).
+Simply open `docs/index.html` in a modern web browser. The only external dependency is [Apache ECharts](https://echarts.apache.org/) (loaded from CDN).
 
 ## 📁 Repository Structure
 
