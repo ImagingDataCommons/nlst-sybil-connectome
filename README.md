@@ -2,7 +2,11 @@
 
 A content-based image retrieval (CBIR) connectome that visualizes **tumor-level similarity** between 289 lung cancer patients from the [National Lung Screening Trial (NLST)](https://www.cancer.gov/types/lung/research/nlst). For each patient, the tumor region is defined by bounding boxes from the [NLST-Sybil](https://doi.org/10.5281/zenodo.15643334) analysis results collection, and feature embeddings are extracted from these regions using 9 foundation models. The connectome shows which tumors look most (and least) alike according to each model.
 
-All imaging data is sourced from [NCI Imaging Data Commons (IDC)](https://imaging.datacommons.cancer.gov/).
+### Why 289 Patients?
+
+The NLST-Sybil collection contains tumor annotations for a larger set of patients, but some patients have multiple annotated lesions. To simplify the analysis to one embedding per patient per model, **only patients with exactly one annotated lesion are included**, resulting in 289 patients. This avoids the ambiguity of how to compare patients with multiple tumors (e.g., closest lesion, average embedding, all pairwise combinations).
+
+All imaging data, lesion annotations and clinical data are sourced from [NCI Imaging Data Commons (IDC)](https://imaging.datacommons.cancer.gov/).
 
 ## 🚀 Overview
 
