@@ -412,7 +412,7 @@
     Content-based image retrieval (CBIR) connectome for the <a href="https://www.cancer.gov/types/lung/research/nlst" target="_blank">National Lung Screening Trial (NLST)</a> dataset.
     Each node is a patient; edges connect to the 5 nearest (or farthest) matches in the embedding space of 9 foundation models.
     Imaging data from <a href="https://portal.imaging.datacommons.cancer.gov/explore/filters/?collection_id=nlst" target="_blank">NCI Imaging Data Commons (IDC)</a>.
-    Lung cancer risk predictions from <a href="https://github.com/reginabarzilaygroup/Sybil" target="_blank">Sybil</a>.
+    Tumor annotations from <a href="https://doi.org/10.5281/zenodo.15643334" target="_blank">NLST-Sybil</a>.
     Built with <a href="https://claude.ai/claude-code" target="_blank">Claude Code</a> using the <a href="https://github.com/ImagingDataCommons/idc-claude-skill" target="_blank">IDC skill</a>.
   </div>
 
@@ -917,7 +917,7 @@
           }
           return '<div class="clinical-info">' + rows + '</div>';
         })()}
-        ${VIEWER_URLS[patientId] ? '<a href="' + VIEWER_URLS[patientId] + '" target="_blank" rel="noopener" class="idc-viewer-link">Open in IDC Viewer (CT + Sybil SR)</a>' : ''}
+        ${VIEWER_URLS[patientId] ? '<a href="' + VIEWER_URLS[patientId] + '" target="_blank" rel="noopener" class="idc-viewer-link">Open in IDC Viewer (CT + NLST-Sybil SR)</a>' : ''}
       `;
 
       if (matches.length > 0) {
