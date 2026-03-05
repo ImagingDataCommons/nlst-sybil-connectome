@@ -155,10 +155,54 @@
       margin-left: auto;
     }
 
+    #shareBtn {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      cursor: pointer;
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--accent);
+      transition: all 0.2s;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(56, 189, 248, 0.25);
+    }
+    #shareBtn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      box-shadow: 0 4px 28px rgba(56, 189, 248, 0.4);
+      transform: translateY(-1px);
+    }
+    #shareBtn.copied {
+      border-color: #34d399;
+      color: #34d399;
+      box-shadow: 0 4px 20px rgba(52, 211, 153, 0.3);
+    }
+    #shareBtn .share-icon {
+      font-size: 1.1rem;
+    }
+    #shareBtn.pulse {
+      animation: sharePulse 2s ease-in-out 3;
+    }
+    @keyframes sharePulse {
+      0%, 100% { box-shadow: 0 4px 20px rgba(56, 189, 248, 0.25); }
+      50% { box-shadow: 0 4px 32px rgba(56, 189, 248, 0.6); border-color: #7dd3fc; }
+    }
+
+
     #main-content {
       display: flex;
       flex: 1;
       overflow: hidden;
+      position: relative;
     }
 
     #chart-container {
@@ -502,6 +546,9 @@
 
   <div id="main-content">
     <div id="chart-container"></div>
+    <button id="shareBtn" class="pulse" onclick="copyShareURL()">
+      <span class="share-icon">&#x1F517;</span> Share URL
+    </button>
     <div id="detail-panel" class="hidden">
       <button id="close-panel">&times;</button>
       <div id="panel-content"></div>
@@ -554,7 +601,32 @@
     let currentModel = null;
     let currentMatchType = 'c';  // 'c' = closest, 'f' = farthest
     let currentColorBy = 'cancerType';
+    let selectedPatient = null;
     let legendSelected = null;
+
+    // ── URL State ────────────────────────────────────────────
+    function updateURL() {
+      const params = new URLSearchParams();
+      if (currentModel) params.set('model', currentModel);
+      params.set('match', currentMatchType);
+      params.set('color', currentColorBy);
+      if (selectedPatient) params.set('patient', selectedPatient);
+      const url = window.location.pathname + '?' + params.toString();
+      history.replaceState(null, '', url);
+    }
+
+    function copyShareURL() {
+      const btn = document.getElementById('shareBtn');
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        btn.innerHTML = '<span class="share-icon">&#x2705;</span> Copied!';
+        btn.classList.add('copied');
+        btn.classList.remove('pulse');
+        setTimeout(() => {
+          btn.innerHTML = '<span class="share-icon">&#x1F517;</span> Share URL';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
 
     // ── Color schemes for clinical facets ─────────────────────
     const COLOR_SCHEMES = {
@@ -685,12 +757,40 @@
       buildAllModelGraphs();
       populateModelDropdown();
 
-      const firstModel = modelSelect.options[0]?.value;
-      if (firstModel) {
-        modelSelect.value = firstModel;
+      // Read URL parameters
+      const params = new URLSearchParams(window.location.search);
+      const urlModel = params.get('model');
+      const urlMatch = params.get('match');
+      const urlColor = params.get('color');
+      const urlPatient = params.get('patient');
+
+      // Apply model from URL or use default
+      const models = Object.keys(MATCH_DATA).sort();
+      const initModel = (urlModel && models.includes(urlModel)) ? urlModel : models[0];
+
+      // Apply match type from URL
+      if (urlMatch === 'c' || urlMatch === 'f') {
+        currentMatchType = urlMatch;
+        document.getElementById('btnClosest').classList.toggle('active', urlMatch === 'c');
+        document.getElementById('btnFarthest').classList.toggle('active', urlMatch === 'f');
+      }
+
+      // Apply color scheme from URL
+      if (urlColor && COLOR_SCHEMES[urlColor]) {
+        currentColorBy = urlColor;
+        colorBySelect.value = urlColor;
+      }
+
+      if (initModel) {
+        modelSelect.value = initModel;
         setTimeout(() => {
-          renderNetwork(firstModel);
+          renderNetwork(initModel);
           hideLoading();
+          // Select patient from URL after render
+          if (urlPatient && modelGraphs[initModel]?.[currentMatchType]?.degreeMap?.[urlPatient] !== undefined) {
+            showDetailPanel(urlPatient);
+          }
+          updateURL();
         }, 50);
       } else {
         hideLoading();
@@ -805,6 +905,7 @@
         setTimeout(() => {
           renderNetwork(currentModel);
           hideLoading();
+          updateURL();
         }, 50);
       }
     }
@@ -984,6 +1085,9 @@
       const graph = modelGraphs[currentModel]?.[currentMatchType];
       if (!graph) return;
 
+      selectedPatient = patientId;
+      updateURL();
+
       // Highlight selected node in graph
       if (myChart) {
         myChart.dispatchAction({ type: 'unselect', seriesIndex: 0 });
@@ -1080,6 +1184,8 @@
 
     function hideDetailPanel() {
       detailPanel.classList.add('hidden');
+      selectedPatient = null;
+      updateURL();
       if (myChart) {
         myChart.dispatchAction({ type: 'unselect', seriesIndex: 0 });
         setTimeout(() => myChart.resize(), 50);
@@ -1102,6 +1208,7 @@
       setTimeout(() => {
         renderNetwork(model);
         hideLoading();
+        updateURL();
       }, 50);
     });
 
@@ -1111,6 +1218,7 @@
       if (currentModel) {
         renderNetwork(currentModel, false);
       }
+      updateURL();
     });
 
     document.getElementById('close-panel').addEventListener('click', hideDetailPanel);
