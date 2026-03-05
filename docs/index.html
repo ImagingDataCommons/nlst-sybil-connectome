@@ -907,6 +907,21 @@
           categories: scheme.categories,
           roam: true,
           draggable: true,
+          selectedMode: 'single',
+          select: {
+            label: {
+              show: true,
+              fontSize: 13,
+              fontWeight: 'bold',
+              color: '#ffffff'
+            },
+            itemStyle: {
+              borderColor: '#facc15',
+              borderWidth: 3,
+              shadowBlur: 24,
+              shadowColor: 'rgba(250, 204, 21, 0.6)'
+            }
+          },
           scaleLimit: { min: 0.15, max: 6 },
           force: {
             initLayout: 'circular',
@@ -968,6 +983,12 @@
     function showDetailPanel(patientId) {
       const graph = modelGraphs[currentModel]?.[currentMatchType];
       if (!graph) return;
+
+      // Highlight selected node in graph
+      if (myChart) {
+        myChart.dispatchAction({ type: 'unselect', seriesIndex: 0 });
+        myChart.dispatchAction({ type: 'select', seriesIndex: 0, name: patientId });
+      }
 
       const matchMap = MATCH_DATA[currentModel]?.[currentMatchType];
       const matches = matchMap?.[patientId] || [];
@@ -1059,7 +1080,10 @@
 
     function hideDetailPanel() {
       detailPanel.classList.add('hidden');
-      if (myChart) setTimeout(() => myChart.resize(), 50);
+      if (myChart) {
+        myChart.dispatchAction({ type: 'unselect', seriesIndex: 0 });
+        setTimeout(() => myChart.resize(), 50);
+      }
     }
 
     // ── Event Handlers ────────────────────────────────────────
