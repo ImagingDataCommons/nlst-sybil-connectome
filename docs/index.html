@@ -155,6 +155,116 @@
       margin-left: auto;
     }
 
+    #modelInfoBtn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    #modelInfoBtn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    #modelModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+    #modelModal.visible {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+      max-width: 640px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: var(--text-main); }
+    .modal-title {
+      color: var(--accent);
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .model-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .model-table th {
+      text-align: left;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+    .model-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+      color: var(--text-main);
+      vertical-align: top;
+    }
+    .model-table tr.active-model td {
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .model-table a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .model-table a:hover { text-decoration: underline; }
+    .cite-copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      margin-left: 6px;
+      transition: all 0.15s;
+      vertical-align: middle;
+    }
+    .cite-copy-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .cite-copy-btn.cite-copied {
+      border-color: #34d399;
+      color: #34d399;
+    }
+
     #shareBtn {
       position: absolute;
       top: 12px;
@@ -526,6 +636,7 @@
     <select id="modelSelect">
       <option value="">Loading...</option>
     </select>
+    <button id="modelInfoBtn" onclick="showModelInfo()" title="Model information">i</button>
 
     <div style="display:flex;gap:4px">
       <button id="btnClosest" class="toggle-btn active" onclick="setMatchType('c')">Most Similar</button>
@@ -552,6 +663,14 @@
     <div id="detail-panel" class="hidden">
       <button id="close-panel">&times;</button>
       <div id="panel-content"></div>
+    </div>
+  </div>
+
+  <div id="modelModal" onclick="if(event.target===this)closeModelInfo()">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModelInfo()">&times;</button>
+      <div class="modal-title">Foundation Models</div>
+      <table class="model-table" id="modelTable"></table>
     </div>
   </div>
 
@@ -624,6 +743,51 @@
         setTimeout(() => {
           btn.innerHTML = '<span class="share-icon">&#x1F517;</span> Share URL';
           btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    // ── Model Info ────────────────────────────────────────────
+    const MODEL_INFO = {
+      CTClipVit: { name: 'CT-CLIP', authors: 'Hamamci et al.', venue: 'Nature Biomedical Engineering (2025)', url: 'https://doi.org/10.1038/s41551-025-01599-y', desc: 'Vision-language model pre-trained on CT volumes with paired radiology reports.', cite: 'Hamamci, I.B. et al. A foundation model for CT imaging. Nat. Biomed. Eng. (2025). https://doi.org/10.1038/s41551-025-01599-y' },
+      CTFM: { name: 'CT-FM', authors: 'Pai et al.', venue: 'arXiv:2501.09001 (2025)', url: 'https://arxiv.org/abs/2501.09001', desc: 'Vision foundation model specifically designed for computed tomography analysis.', cite: 'Pai, S. et al. Vision Foundation Models for Computed Tomography (2025). arXiv:2501.09001' },
+      FMCIB: { name: 'FMCIB', authors: 'Pai et al.', venue: 'Nature Machine Intelligence 6, 354\u2013367 (2024)', url: 'https://doi.org/10.1038/s42256-024-00807-9', desc: 'Foundation model for cancer imaging biomarkers, trained on large-scale radiological data.', cite: 'Pai, S. et al. Foundation model for cancer imaging biomarkers. Nat. Mach. Intell. 6, 354\u2013367 (2024). https://doi.org/10.1038/s42256-024-00807-9' },
+      Merlin: { name: 'Merlin', authors: 'Blankemeier et al.', venue: 'arXiv:2406.06512 (2024)', url: 'https://arxiv.org/abs/2406.06512', desc: 'Vision-language foundation model for 3D computed tomography.', cite: 'Blankemeier, L. et al. Merlin: A Vision Language Foundation Model for 3D CT (2024). arXiv:2406.06512' },
+      ModelsGen: { name: 'Models Genesis', authors: 'Zhou et al.', venue: 'MICCAI 11767, 384\u2013393 (2019)', url: 'https://doi.org/10.1007/978-3-030-32251-9_42', desc: 'Self-supervised pre-trained models that transfer across 3D medical imaging tasks.', cite: 'Zhou, Z. et al. Models Genesis: Generic Autodidactic Models for 3D Medical Image Analysis. MICCAI 11767, 384\u2013393 (2019). https://doi.org/10.1007/978-3-030-32251-9_42' },
+      PASTA: { name: 'PASTA', authors: 'Lei et al.', venue: 'arXiv:2501.10785 (2025)', url: 'https://arxiv.org/abs/2501.10785', desc: 'Data-efficient pan-tumor foundation model for oncology CT.', cite: 'Lei, T. et al. A Data-Efficient Pan-Tumor Foundation Model for Oncology CT (2025). arXiv:2501.10785' },
+      SUPREME: { name: 'SuPreM', authors: 'Li, Yuille & Zhou', venue: 'arXiv:2501.11253 (2025)', url: 'https://arxiv.org/abs/2501.11253', desc: 'Supervised pre-trained models evaluated on medical imaging transfer tasks.', cite: 'Li, W., Yuille, A. & Zhou, Z. How Well Do Supervised 3D Models Transfer to Medical Imaging Tasks? (2025). arXiv:2501.11253' },
+      VISTA3D: { name: 'VISTA3D', authors: 'He et al.', venue: 'arXiv:2406.05285 (2024)', url: 'https://arxiv.org/abs/2406.05285', desc: 'Versatile imaging segmentation and annotation model for 3D CT.', cite: 'He, Y. et al. VISTA3D: Versatile Imaging SegmenTation and Annotation Model for 3D CT (2024). arXiv:2406.05285' },
+      Voco: { name: 'VoCo', authors: 'Wu, Zhuang & Chen', venue: 'IEEE TPAMI (2025)', url: 'https://doi.org/10.1109/TPAMI.2025.3639593', desc: 'Volume-contrastive self-supervised pre-training for 3D medical image analysis.', cite: 'Wu, L., Zhuang, J. & Chen, H. VoCo: A Simple-yet-Effective Volume Contrastive Learning Framework for 3D Medical Image Analysis. IEEE TPAMI (2025). https://doi.org/10.1109/TPAMI.2025.3639593' }
+    };
+
+    function showModelInfo() {
+      const table = document.getElementById('modelTable');
+      const rows = Object.keys(MODEL_INFO).sort().map(key => {
+        const m = MODEL_INFO[key];
+        const active = key === currentModel ? ' class="active-model"' : '';
+        return `<tr${active}>
+          <td><strong>${m.name}</strong></td>
+          <td>${m.desc}</td>
+          <td>${m.authors}, <em>${m.venue}</em><br><a href="${m.url}" target="_blank" rel="noopener">Paper</a> <button class="cite-copy-btn" onclick="copyCitation('${key}', this)" title="Copy citation">Copy</button></td>
+        </tr>`;
+      }).join('');
+      table.innerHTML = `<thead><tr><th>Model</th><th>Description</th><th>Reference</th></tr></thead><tbody>${rows}</tbody>`;
+      document.getElementById('modelModal').classList.add('visible');
+    }
+
+    function closeModelInfo() {
+      document.getElementById('modelModal').classList.remove('visible');
+    }
+
+    function copyCitation(key, btn) {
+      const m = MODEL_INFO[key];
+      if (!m) return;
+      navigator.clipboard.writeText(m.cite).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('cite-copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('cite-copied');
         }, 2000);
       });
     }
