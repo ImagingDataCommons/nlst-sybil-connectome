@@ -209,7 +209,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 2000;
+      z-index: 2147483647;
       background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);
       align-items: center;
@@ -257,7 +257,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 2000;
+      z-index: 2147483647;
       background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);
       align-items: center;
@@ -945,6 +945,7 @@
     }
 
     function showAbout() {
+      if (window.myChart) myChart.dispatchAction({ type: 'hideTip' });
       document.getElementById('aboutModal').classList.add('visible');
     }
 
@@ -1275,6 +1276,8 @@
           borderWidth: 0,
           padding: 0,
           showDelay: 80,
+          hideDelay: 0,
+          transitionDuration: 0,
           formatter: function (params) {
             if (params.dataType === 'node') {
               const id = params.data.name;
@@ -1589,6 +1592,12 @@
         if (params.dataType === 'node') {
           loadThumbnail(params.data.name);
         }
+      });
+
+      // Hide tooltip when mouse leaves the chart container (fixes sticky tooltip
+      // when mouse exits viewport while hovering a node at the edge)
+      chartContainer.addEventListener('mouseleave', () => {
+        myChart.dispatchAction({ type: 'hideTip' });
       });
 
       loadData();
