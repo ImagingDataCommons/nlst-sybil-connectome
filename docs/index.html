@@ -14,6 +14,16 @@
   <title>NLST Sybil Tumor Connectome</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230f172a'/%3E%3Cline x1='20' y1='18' x2='44' y2='26' stroke='%2338bdf8' stroke-width='2' opacity='0.5'/%3E%3Cline x1='20' y1='18' x2='16' y2='44' stroke='%2338bdf8' stroke-width='2' opacity='0.5'/%3E%3Cline x1='44' y1='26' x2='48' y2='46' stroke='%2338bdf8' stroke-width='2' opacity='0.5'/%3E%3Cline x1='16' y1='44' x2='48' y2='46' stroke='%2338bdf8' stroke-width='2' opacity='0.5'/%3E%3Cline x1='16' y1='44' x2='32' y2='52' stroke='%2338bdf8' stroke-width='2' opacity='0.5'/%3E%3Cline x1='48' y1='46' x2='32' y2='52' stroke='%2338bdf8' stroke-width='2' opacity='0.5'/%3E%3Cline x1='44' y1='26' x2='32' y2='52' stroke='%2338bdf8' stroke-width='2' opacity='0.3'/%3E%3Ccircle cx='20' cy='18' r='6' fill='%23818cf8'/%3E%3Ccircle cx='44' cy='26' r='8' fill='%2338bdf8'/%3E%3Ccircle cx='16' cy='44' r='5' fill='%23f472b6'/%3E%3Ccircle cx='48' cy='46' r='7' fill='%2334d399'/%3E%3Ccircle cx='32' cy='52' r='5' fill='%23fb923c'/%3E%3C/svg%3E">
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script>
+    if (typeof echarts === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.1/echarts.min.js"><\/script>');
+    }
+  </script>
+  <script>
+    if (typeof echarts === 'undefined') {
+      document.write('<script src="https://unpkg.com/echarts@5/dist/echarts.min.js"><\/script>');
+    }
+  </script>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -176,6 +186,71 @@
       border-color: var(--accent);
       color: var(--accent);
       background: rgba(56, 189, 248, 0.1);
+    }
+
+    #aboutBtn {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 4px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-left: 12px;
+    }
+    #aboutBtn:hover {
+      background: rgba(56, 189, 248, 0.25);
+      color: #fff;
+    }
+
+    #aboutModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+    #aboutModal.visible {
+      display: flex;
+    }
+    .about-section {
+      margin-top: 20px;
+    }
+    .about-section:first-child {
+      margin-top: 0;
+    }
+    .about-section h3 {
+      color: var(--accent);
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .about-section p, .about-section ul {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      line-height: 1.7;
+    }
+    .about-section ul {
+      padding-left: 18px;
+      margin-top: 6px;
+    }
+    .about-section li {
+      margin-bottom: 6px;
+    }
+    .about-section strong {
+      color: var(--text-main);
+    }
+    .about-section a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .about-section a:hover {
+      text-decoration: underline;
     }
 
     #modelModal {
@@ -616,7 +691,10 @@
 <body>
 
   <header>
-    <h1>NLST <span style="color:#818cf8">Sybil</span> Tumor Connectome</h1>
+    <div style="display:flex;align-items:center">
+      <h1>NLST <span style="color:#818cf8">Sybil</span> Tumor Connectome</h1>
+      <button id="aboutBtn" onclick="showAbout()" title="About this visualization"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About</button>
+    </div>
     <div id="status-info">
       <span class="dot"></span>
       <span>Ready</span>
@@ -672,6 +750,92 @@
       <button class="modal-close" onclick="closeModelInfo()">&times;</button>
       <div class="modal-title">Foundation Models</div>
       <table class="model-table" id="modelTable"></table>
+    </div>
+  </div>
+
+  <div id="aboutModal" onclick="if(event.target===this)closeAbout()">
+    <div class="modal-content" style="max-width:720px">
+      <button class="modal-close" onclick="closeAbout()">&times;</button>
+      <div class="modal-title">About This Visualization</div>
+
+      <div class="about-section">
+        <h3>What is this?</h3>
+        <p>This interactive map shows how similar lung tumors look to artificial intelligence.
+        Each dot represents a real lung cancer patient from the
+        <a href="https://www.cancer.gov/types/lung/research/nlst" target="_blank">National Lung Screening Trial (NLST)</a>,
+        a large U.S. clinical study of lung cancer screening with low-dose CT scans.
+        Lines connect patients whose tumors look most alike &mdash; or least alike &mdash;
+        according to AI models trained on medical images.</p>
+      </div>
+
+      <div class="about-section">
+        <h3>How was it made?</h3>
+        <p>Researchers took CT scans of <strong>289 lung cancer patients</strong>, each with a single identified tumor.
+        The tumor in each scan was located using bounding boxes from the
+        <a href="https://doi.org/10.5281/zenodo.15643334" target="_blank">NLST-Sybil</a> analysis.
+        Each tumor region was then fed into <strong>9 different AI models</strong> (called foundation models).
+        Each model converts the tumor image into a mathematical fingerprint &mdash; a list of hundreds of numbers
+        called an <em>embedding</em>. These fingerprints capture the visual features of the tumor as the AI "sees" it.
+        We then compared all fingerprints to find which tumors look most &mdash; and least &mdash; similar to each other.</p>
+      </div>
+
+      <div class="about-section">
+        <h3>What do the connections mean?</h3>
+        <p>For each patient, the AI compares their tumor fingerprint against all other 288 patients to find the
+        <strong>5 closest</strong> (most similar) and <strong>5 farthest</strong> (least similar) matches:</p>
+        <ul>
+          <li><strong>Most Similar:</strong> The 5 patients whose tumors the AI considers to look most alike
+          are connected by lines. A higher similarity percentage on a line means the two tumors look nearly
+          identical to the AI.</li>
+          <li><strong>Least Similar:</strong> The reverse &mdash; the 5 patients whose tumors the AI sees as
+          looking the most different. These highlight outlier relationships and unusual tumors.</li>
+        </ul>
+        <p>The similarity is measured using <strong>cosine distance</strong>, which compares the "direction"
+        of two fingerprint vectors. Think of each fingerprint as an arrow pointing in some direction.
+        If two arrows point nearly the same way, the angle between them is small and the tumors are very similar
+        (cosine distance close to 0). If they point in very different directions, the tumors are very different
+        (cosine distance close to 1). The <strong>similarity %</strong> shown on edges is
+        <code>(1 &minus; cosine distance) &times; 100</code> &mdash; so 95% means nearly identical fingerprints,
+        while 50% means quite different. Cosine distance measures the <em>pattern</em> of features rather than
+        their overall strength, so two tumors can be "similar" even if one has a stronger signal, as long as
+        the relative feature patterns match.</p>
+      </div>
+
+      <div class="about-section">
+        <h3>Reading the graph</h3>
+        <ul>
+          <li><strong>Dot size:</strong> Patients who appear as a top match for many others get bigger dots &mdash;
+          they represent "typical" tumors that many other tumors resemble.</li>
+          <li><strong>Clustering:</strong> The graph uses a physics simulation that pulls connected patients closer
+          together. Visible clusters mean the AI found groups of similar-looking tumors.</li>
+          <li><strong>Color:</strong> Dots can be colored by clinical features (cancer type, sex, age, etc.)
+          to see whether AI-perceived similarity correlates with clinical characteristics.</li>
+          <li><strong>Different models, different views:</strong> Each of the 9 AI models was trained differently
+          and focuses on different features. Switching models may reveal different groupings &mdash;
+          some may cluster by tumor size, others by texture or shape. This is one of the key things to explore!</li>
+        </ul>
+      </div>
+
+      <div class="about-section">
+        <h3>How to use it</h3>
+        <ul>
+          <li><strong>Model selector:</strong> Choose which AI model's view of tumor similarity to display.</li>
+          <li><strong>Most Similar / Least Similar:</strong> Toggle between seeing the closest or farthest matches.</li>
+          <li><strong>Color by:</strong> Color the dots by clinical features like cancer type, sex, or stage.</li>
+          <li><strong>Click a dot:</strong> Opens a detail panel showing the patient's clinical data, a CT scan thumbnail,
+          a link to view the full scan, and their top matches.</li>
+          <li><strong>Share URL:</strong> Copy a link that preserves your current view (model, match type, color, and selected patient).</li>
+        </ul>
+      </div>
+
+      <div class="about-section">
+        <h3>Data sources</h3>
+        <p>All data is publicly available from
+        <a href="https://imaging.datacommons.cancer.gov/" target="_blank">NCI Imaging Data Commons (IDC)</a>.
+        Tumor annotations are from the
+        <a href="https://doi.org/10.5281/zenodo.15643334" target="_blank">NLST-Sybil</a> collection.
+        Source code is on <a href="https://github.com/ImagingDataCommons/nlst-sybil-connectome" target="_blank">GitHub</a>.</p>
+      </div>
     </div>
   </div>
 
@@ -778,6 +942,14 @@
 
     function closeModelInfo() {
       document.getElementById('modelModal').classList.remove('visible');
+    }
+
+    function showAbout() {
+      document.getElementById('aboutModal').classList.add('visible');
+    }
+
+    function closeAbout() {
+      document.getElementById('aboutModal').classList.remove('visible');
     }
 
     function copyCitation(key, btn) {
