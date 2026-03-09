@@ -1,6 +1,28 @@
 # NLST Sybil Tumor Connectome
 
+![NLST Sybil Tumor Connectome Demo](docs/demo.jpg)
+
 A content-based image retrieval (CBIR) connectome that visualizes **tumor-level similarity** between 289 lung cancer patients from the [National Lung Screening Trial (NLST)](https://www.cancer.gov/types/lung/research/nlst). For each patient, the tumor region is defined by bounding boxes from the [NLST-Sybil](https://doi.org/10.5281/zenodo.15643334) analysis results collection, and feature embeddings are extracted from these regions using 9 foundation models. The connectome shows which tumors look most (and least) alike according to each model.
+
+## In Plain English
+
+This interactive map shows how similar lung tumors look to AI. Each dot is a real lung cancer patient from a large U.S. clinical study. Researchers took CT scans of 289 patients, identified the tumor in each scan, and fed those tumor regions into 9 different AI models. Each AI model converts the tumor image into a mathematical fingerprint (called an *embedding*) — a list of hundreds of numbers that capture the visual features of the tumor as the AI "sees" it. We then compared all fingerprints to find which tumors look most — and least — similar to each other.
+
+### What do the connections mean?
+
+For each patient, the AI compares their tumor fingerprint against all other 288 patients to find the **5 closest** (most similar) and **5 farthest** (least similar) matches:
+
+* **Most Similar:** The 5 patients whose tumors the AI considers to look most alike are connected by lines. A higher similarity percentage on a line means the two tumors look nearly identical to the AI.
+* **Least Similar:** The reverse — the 5 patients whose tumors the AI sees as looking the most different, highlighting outlier relationships and unusual tumors.
+
+Similarity is measured using **cosine distance**, which compares the "direction" of two fingerprint vectors. Think of each fingerprint as an arrow pointing in some direction in a high-dimensional space. If two arrows point nearly the same way, the angle between them is small and the tumors are very similar (cosine distance close to 0). If they point in very different directions, the tumors are very different (cosine distance close to 1). The **similarity %** shown on edges is `(1 − cosine distance) × 100` — so 95% means nearly identical fingerprints, while 50% means quite different. Cosine distance measures the *pattern* of features rather than their overall strength, so two tumors can be "similar" even if one has a stronger signal, as long as the relative feature patterns match.
+
+### Reading the graph
+
+* **Dot size:** Patients who appear as a top match for many others get bigger dots — they represent "typical" tumors that many other tumors resemble.
+* **Clustering:** The graph uses a physics simulation that pulls connected patients closer together. Visible clusters mean the AI found groups of similar-looking tumors.
+* **Color:** Dots can be colored by clinical features (cancer type, sex, age, etc.) to see whether AI-perceived similarity correlates with clinical characteristics.
+* **Different models, different views:** Each of the 9 AI models was trained differently and focuses on different features. Switching models may reveal different groupings — some may cluster by tumor size, others by texture or shape.
 
 ### Why 289 Patients?
 
