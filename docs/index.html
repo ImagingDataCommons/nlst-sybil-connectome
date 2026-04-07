@@ -887,6 +887,8 @@
     let currentColorBy = 'cancerType';
     let selectedPatient = null;
     let legendSelected = null;
+    let pinnedNode = null;  // node whose highlight is locked by click
+    let _dispatch = (action) => myChart?.dispatchAction(action); // bypasses pin intercept; replaced after init
 
     // ── URL State ────────────────────────────────────────────
     function updateURL() {
@@ -1426,12 +1428,15 @@
       if (!graph) return;
 
       selectedPatient = patientId;
+      pinnedNode = patientId;
       updateURL();
 
       // Highlight selected node in graph
       if (myChart) {
         myChart.dispatchAction({ type: 'unselect', seriesIndex: 0 });
         myChart.dispatchAction({ type: 'select', seriesIndex: 0, name: patientId });
+        _dispatch({ type: 'downplay', seriesIndex: 0 });
+        _dispatch({ type: 'highlight', seriesIndex: 0, name: patientId });
       }
 
       const matchMap = MATCH_DATA[currentModel]?.[currentMatchType];
@@ -1525,9 +1530,11 @@
     function hideDetailPanel() {
       detailPanel.classList.add('hidden');
       selectedPatient = null;
+      pinnedNode = null;
       updateURL();
       if (myChart) {
         myChart.dispatchAction({ type: 'unselect', seriesIndex: 0 });
+        myChart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
         setTimeout(() => myChart.resize(), 50);
       }
     }
@@ -1568,8 +1575,6 @@
       if (!card) return;
       const id = card.dataset.id;
       if (!id) return;
-      myChart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
-      myChart.dispatchAction({ type: 'highlight', seriesIndex: 0, name: id });
       showDetailPanel(id);
     });
 
@@ -1581,23 +1586,79 @@
     document.addEventListener('DOMContentLoaded', () => {
       myChart = echarts.init(chartContainer, null, { renderer: 'canvas' });
 
-      myChart.on('click', (params) => {
-        if (params.dataType === 'node') {
-          showDetailPanel(params.data.name);
+      // Intercept dispatchAction to enforce pin: when a node is pinned, block any
+      // highlight/downplay calls that aren't for the pinned node (ECharts fires
+      // these internally on mouseover of other nodes).
+      const _origDispatch = myChart.dispatchAction.bind(myChart);
+      let _intercepting = false;
+      myChart.dispatchAction = function(action) {
+        if (pinnedNode && !_intercepting) {
+          // Only block highlight/downplay from ECharts' internal hover machinery,
+          // identified by not having an explicit dataIndex (pan/drag use different paths)
+          if (action.type === 'highlight' && action.name !== pinnedNode && action.dataIndex == null) return;
+          if (action.type === 'downplay' && action.dataIndex == null && action.name == null) return;
         }
+        return _origDispatch(action);
+      };
+      // Override module-level _dispatch to bypass the intercept for our own pin assertions
+      _dispatch = function(action) {
+        _intercepting = true;
+        _origDispatch(action);
+        _intercepting = false;
+      };
+
+      // Track which node the mouse is currently over
+      let _hoveredNode = null;
+      // Pending single-click timer (cancelled if a dblclick arrives)
+      let _clickTimer = null;
+
+      myChart.on('click', (params) => {
+        if (params.dataType !== 'node') return;
+        const name = params.data.name;
+        // Defer pin action briefly so a double-click on a node can cancel it
+        clearTimeout(_clickTimer);
+        _clickTimer = setTimeout(() => {
+          pinnedNode = name;
+          _dispatch({ type: 'downplay', seriesIndex: 0 });
+          _dispatch({ type: 'highlight', seriesIndex: 0, name });
+          showDetailPanel(name);
+        }, 220);
       });
 
-      // Pre-fetch thumbnail on hover for instant display on click
       myChart.on('mouseover', (params) => {
         if (params.dataType === 'node') {
+          _hoveredNode = params.data.name;
           loadThumbnail(params.data.name);
         }
       });
 
-      // Hide tooltip when mouse leaves the chart container (fixes sticky tooltip
-      // when mouse exits viewport while hovering a node at the edge)
+      myChart.on('mouseout', (params) => {
+        if (params.dataType === 'node') _hoveredNode = null;
+        // Re-assert pinned highlight after ECharts clears it on mouseout
+        if (pinnedNode) {
+          _dispatch({ type: 'downplay', seriesIndex: 0 });
+          _dispatch({ type: 'highlight', seriesIndex: 0, name: pinnedNode });
+        } else {
+          _dispatch({ type: 'downplay', seriesIndex: 0 });
+        }
+      });
+
+      // Double-click anywhere to unpin (cancels pending single-click first)
+      chartContainer.addEventListener('dblclick', () => {
+        clearTimeout(_clickTimer);
+        if (pinnedNode) {
+          pinnedNode = null;
+          _dispatch({ type: 'downplay', seriesIndex: 0 });
+          hideDetailPanel();
+        }
+      });
+
+      // Hide tooltip when mouse leaves the chart container
       chartContainer.addEventListener('mouseleave', () => {
         myChart.dispatchAction({ type: 'hideTip' });
+        if (!pinnedNode) {
+          _dispatch({ type: 'downplay', seriesIndex: 0 });
+        }
       });
 
       loadData();

@@ -1,0 +1,11 @@
+{
+  "name": "nlst-sybil-connectome-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node pin-interaction.test.js"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}
