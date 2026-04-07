@@ -396,6 +396,40 @@
       height: 100%;
     }
 
+    #graph-hint {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30,30,46,0.82);
+      color: #94a3b8;
+      font-size: 11.5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(148,163,184,0.18);
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+      transition: opacity 0.4s;
+    }
+
+    #graph-hint.hidden {
+      opacity: 0;
+    }
+
+    #graph-hint kbd {
+      display: inline-block;
+      background: rgba(148,163,184,0.15);
+      border: 1px solid rgba(148,163,184,0.3);
+      border-radius: 4px;
+      padding: 0 5px;
+      font-family: inherit;
+      font-size: 10.5px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
     #detail-panel {
       width: 380px;
       background: var(--card-bg);
@@ -736,6 +770,7 @@
 
   <div id="main-content">
     <div id="chart-container"></div>
+    <div id="graph-hint"><kbd>click</kbd> node to pin &nbsp;·&nbsp; <kbd>dbl-click</kbd> canvas to unpin &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; scroll to zoom</div>
     <button id="shareBtn" class="pulse" onclick="copyShareURL()">
       <span class="share-icon">&#x1F517;</span> Share URL
     </button>
@@ -822,8 +857,14 @@
           <li><strong>Model selector:</strong> Choose which AI model's view of tumor similarity to display.</li>
           <li><strong>Most Similar / Least Similar:</strong> Toggle between seeing the closest or farthest matches.</li>
           <li><strong>Color by:</strong> Color the dots by clinical features like cancer type, sex, or stage.</li>
-          <li><strong>Click a dot:</strong> Opens a detail panel showing the patient's clinical data, a CT scan thumbnail,
-          a link to view the full scan, and their top matches.</li>
+          <li><strong>Click a node:</strong> <em>Pins</em> the node — its adjacency highlight stays locked and the detail panel
+          opens with the patient's clinical data, a CT scan thumbnail, a link to view the full scan, and their top matches.
+          The highlight persists even when you move the mouse away or hover over other nodes.</li>
+          <li><strong>Click another node while pinned:</strong> Switches the pin to the new node.</li>
+          <li><strong>Double-click anywhere on the graph (not on a node):</strong> <em>Unpins</em> the selection and closes the detail panel.</li>
+          <li><strong>× button</strong> in the detail panel: Also unpins and closes the panel.</li>
+          <li><strong>Drag:</strong> Pan the graph. Does not unpin.</li>
+          <li><strong>Scroll:</strong> Zoom in/out.</li>
           <li><strong>Share URL:</strong> Copy a link that preserves your current view (model, match type, color, and selected patient).</li>
         </ul>
       </div>
@@ -1619,6 +1660,7 @@
         clearTimeout(_clickTimer);
         _clickTimer = setTimeout(() => {
           pinnedNode = name;
+          document.getElementById('graph-hint')?.classList.add('hidden');
           _dispatch({ type: 'downplay', seriesIndex: 0 });
           _dispatch({ type: 'highlight', seriesIndex: 0, name });
           showDetailPanel(name);
